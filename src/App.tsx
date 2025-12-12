@@ -22,11 +22,13 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 // Import modules
 import { LinearInterpolationModule } from './modules/linear-interpolation';
+import { PressureGaugeCalibrationModule } from './modules/pressure-gauge-calibration';
 import type { ModuleRegistry } from './shared/types/module';
 
 // Module registry - add new modules here
 const modules: ModuleRegistry = {
   [LinearInterpolationModule.id]: LinearInterpolationModule,
+  [PressureGaugeCalibrationModule.id]: PressureGaugeCalibrationModule,
 };
 
 // Create theme (can be customized)
