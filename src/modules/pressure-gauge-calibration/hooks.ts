@@ -51,13 +51,19 @@ export function usePressureGaugeCalibration() {
     saveJobs(updated);
   }, [jobs, saveJobs]);
 
-  const createGauge = useCallback((jobId: string, label: string, unit: 'MPA' | 'Bar', minRange: number, maxRange: number) => {
+  const createGauge = useCallback((jobId: string, label: string, deviceType: 'gauge' | 'transmitter', unit: string, minRange: number, maxRange: number, currentMin?: number, currentMax?: number, outputUnit?: string, outputMin?: number, outputMax?: number) => {
     const newGauge: Gauge = {
       id: generateId(),
       label,
-      unit,
+      deviceType,
+      unit: unit as any,
+      outputUnit: outputUnit as any,
       minRange,
       maxRange,
+      currentMin,
+      currentMax,
+      outputMin,
+      outputMax,
       points: [],
       timestamp: Date.now(),
     };
@@ -67,6 +73,19 @@ export function usePressureGaugeCalibration() {
     saveJobs(updated);
     setActiveGaugeId(newGauge.id);
     return newGauge;
+  }, [jobs, saveJobs]);
+
+  const updateGauge = useCallback((jobId: string, gaugeId: string, updates: Partial<Gauge>) => {
+    const updated = jobs.map(j => {
+      if (j.id === jobId) {
+        return {
+          ...j,
+          gauges: j.gauges.map(g => g.id === gaugeId ? { ...g, ...updates } : g),
+        };
+      }
+      return j;
+    });
+    saveJobs(updated);
   }, [jobs, saveJobs]);
 
   const deleteGauge = useCallback((jobId: string, gaugeId: string) => {
@@ -92,6 +111,33 @@ export function usePressureGaugeCalibration() {
                   error: point.outputActual - point.outputExpected,
                   errorPercent: point.outputExpected === 0 ? 0 : ((point.outputActual - point.outputExpected) / Math.abs(point.outputExpected)) * 100,
                 }],
+              };
+            }
+            return g;
+          }),
+        };
+      }
+      return j;
+    });
+    saveJobs(updated);
+  }, [jobs, saveJobs]);
+
+  const addCalibrationPoints = useCallback((jobId: string, gaugeId: string, points: Array<Omit<CalibrationPoint, 'id' | 'error' | 'errorPercent'>>) => {
+    const updated = jobs.map(j => {
+      if (j.id === jobId) {
+        return {
+          ...j,
+          gauges: j.gauges.map(g => {
+            if (g.id === gaugeId) {
+              const newPoints = points.map(point => ({
+                ...point,
+                id: generateId(),
+                error: point.outputActual - point.outputExpected,
+                errorPercent: point.outputExpected === 0 ? 0 : ((point.outputActual - point.outputExpected) / Math.abs(point.outputExpected)) * 100,
+              }));
+              return {
+                ...g,
+                points: [...g.points, ...newPoints],
               };
             }
             return g;
@@ -155,6 +201,11 @@ export function usePressureGaugeCalibration() {
     saveJobs(updated);
   }, [jobs, saveJobs]);
 
+  const importJobs = useCallback((imported: Job[]) => {
+    const merged = [...jobs, ...imported];
+    saveJobs(merged);
+  }, [jobs, saveJobs]);
+
   const getActiveJob = useCallback(() => {
     return jobs.find(j => j.id === activeJobId);
   }, [jobs, activeJobId]);
@@ -179,6 +230,9 @@ export function usePressureGaugeCalibration() {
     addCalibrationPoint,
     updateCalibrationPoint,
     deleteCalibrationPoint,
+    addCalibrationPoints,
+    updateGauge,
+    importJobs,
     getActiveJob,
     getActiveGauge,
   };

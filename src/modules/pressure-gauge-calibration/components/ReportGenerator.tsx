@@ -1,8 +1,6 @@
 import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
-import { useRef } from 'react';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { Gauge, Job } from '../types';
 import { calculateStats } from '../utils';
@@ -13,24 +11,68 @@ interface ReportGeneratorProps {
 }
 
 export default function ReportGenerator({ job, gauge }: ReportGeneratorProps) {
-  const reportRef = useRef<HTMLDivElement>(null);
   const stats = calculateStats(gauge.points);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleDownloadPDF = async () => {
-    if (!reportRef.current) return;
-
-    const canvas = await html2canvas(reportRef.current, { scale: 2 });
+  const handleDownloadPDF = () => {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 210; // A4 width in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const margin = 15;
+    let y = margin;
 
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    pdf.save(`${job?.name}_${gauge.label}_report.pdf`);
+    pdf.setFontSize(16);
+    pdf.text('Pressure Gauge Calibration Report', 105, y, { align: 'center' });
+    y += 10;
+
+    pdf.setFontSize(11);
+    if (job) {
+      pdf.text(`Job: ${job.name}`, margin, y);
+      pdf.text(`Date: ${new Date(job.date).toLocaleDateString()}`, 140, y);
+      y += 7;
+      if (job.location) { pdf.text(`Location: ${job.location}`, margin, y); }
+      if (job.technician) { pdf.text(`Technician: ${job.technician}`, 100, y); }
+      y += 10;
+    }
+
+    pdf.text(`Gauge: ${gauge.label}`, margin, y);
+    pdf.text(`Unit: ${gauge.unit}`, 140, y);
+    y += 7;
+    pdf.text(`Range: ${gauge.minRange} - ${gauge.maxRange}`, margin, y);
+    y += 10;
+
+    pdf.setFontSize(12);
+    pdf.text('Error Statistics', margin, y);
+    y += 6;
+    pdf.setFontSize(10);
+    pdf.text(`Avg Error: ${stats.avgError.toFixed(6)}`, margin, y);
+    pdf.text(`Min Error: ${stats.minError.toFixed(6)}`, 90, y);
+    pdf.text(`Max Error: ${stats.maxError.toFixed(6)}`, 140, y);
+    y += 8;
+
+    // Table header
+    pdf.setFontSize(11);
+    const colX = [margin, 55, 95, 135, 170, 190];
+    pdf.text('Input Desired', colX[0], y);
+    pdf.text('Input Actual', colX[1], y);
+    pdf.text('Output Expected', colX[2], y);
+    pdf.text('Output Actual', colX[3], y);
+    pdf.text('Error', colX[4], y);
+    y += 6;
+
+    pdf.setFontSize(10);
+    gauge.points.forEach((p) => {
+      if (y > 280) { pdf.addPage(); y = margin; }
+      pdf.text(p.inputDesired.toFixed(2), colX[0], y);
+      pdf.text(p.inputActual.toFixed(2), colX[1], y);
+      pdf.text(p.outputExpected.toFixed(4), colX[2], y);
+      pdf.text(p.outputActual.toFixed(4), colX[3], y);
+      pdf.text((p.error || 0).toFixed(4), colX[4], y);
+      y += 6;
+    });
+
+    pdf.save(`${(job?.name || 'job')}_${gauge.label}_report.pdf`);
   };
 
   return (
@@ -44,10 +86,7 @@ export default function ReportGenerator({ job, gauge }: ReportGeneratorProps) {
         </Button>
       </Box>
 
-      <Paper
-        ref={reportRef}
-        sx={{ p: 3, bgcolor: '#fff', color: '#000' }}
-      >
+      <Paper sx={{ p: 3, bgcolor: '#fff', color: '#000' }}>
         <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
           Pressure Gauge Calibration Report
         </Typography>

@@ -20,6 +20,7 @@ import AddIcon from '@mui/icons-material/Add';
 import WorkIcon from '@mui/icons-material/Work';
 import { ModuleHeader } from '../../shared/components/ModuleHeader';
 import { usePressureGaugeCalibration } from './hooks';
+import jsPDF from 'jspdf';
 import JobList from './components/JobList';
 import GaugeSelector from './components/GaugeSelector';
 import CalibrationTable from './components/CalibrationTable';
@@ -40,6 +41,16 @@ export default function PressureGaugeCalibration({ onBack }: PressureGaugeCalibr
     createJob,
     getActiveJob,
     getActiveGauge,
+    deleteJob,
+    createGauge,
+    deleteGauge,
+    addCalibrationPoint,
+    updateCalibrationPoint,
+    deleteCalibrationPoint,
+    addCalibrationPoints,
+    updateGauge,
+    importJobs,
+    
   } = usePressureGaugeCalibration();
 
   const [tab, setTab] = useState<'jobs' | 'gauges' | 'calibration' | 'report'>(activeJobId ? 'gauges' : 'jobs');
@@ -76,13 +87,38 @@ export default function PressureGaugeCalibration({ onBack }: PressureGaugeCalibr
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">Active Jobs</Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setNewJobDialog(true)}
-              >
-                New Job
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setNewJobDialog(true)}
+                >
+                  New Job
+                </Button>
+                <Button variant="outlined" onClick={() => {
+                  const data = JSON.stringify(jobs || [] , null, 2);
+                  const blob = new Blob([data], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = 'ci-helper_jobs_export.json'; a.click(); URL.revokeObjectURL(url);
+                }}>Export All</Button>
+                <Button variant="outlined" component="label">Import
+                  <input hidden type="file" accept="application/json" onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      try {
+                        const parsed = JSON.parse(String(reader.result));
+                        importJobs(parsed);
+                      } catch (err) {
+                        console.error('Invalid JSON');
+                      }
+                    };
+                    reader.readAsText(f);
+                  }} />
+                </Button>
+              </Box>
             </Box>
             <JobList
               jobs={jobs}
@@ -90,6 +126,7 @@ export default function PressureGaugeCalibration({ onBack }: PressureGaugeCalibr
                 setActiveJobId(jobId);
                 setTab('gauges');
               }}
+              onDeleteJob={(jobId) => deleteJob(jobId)}
             />
 
             {/* New Job Dialog */}
@@ -142,6 +179,28 @@ export default function PressureGaugeCalibration({ onBack }: PressureGaugeCalibr
                 <WorkIcon />
                 <Typography variant="h6">{activeJob?.name}</Typography>
                 <Button size="small" onClick={() => setActiveJobId(null)}>Back to Jobs</Button>
+                <Button size="small" onClick={() => {
+                  if (!activeJob) return;
+                  const pdf = new jsPDF('p','mm','a4');
+                  const margin = 15; let y = margin;
+                  pdf.setFontSize(14); pdf.text(activeJob.name, 105, y, { align: 'center' }); y += 8;
+                  activeJob.gauges.forEach(g => {
+                    if (y > 270) { pdf.addPage(); y = margin; }
+                    pdf.setFontSize(12); pdf.text(`Gauge: ${g.label}`, margin, y); y += 6;
+                    pdf.setFontSize(10); pdf.text(`Range: ${g.minRange} - ${g.maxRange} ${g.unit}`, margin, y); y += 6;
+                    if (g.points.length) {
+                      pdf.setFontSize(10);
+                      pdf.text('Input Desired / Actual / Output Expected / Actual / Error %', margin, y); y += 5;
+                      g.points.forEach(p => {
+                        if (y > 280) { pdf.addPage(); y = margin; }
+                        pdf.text(`${p.inputDesired.toFixed(2)} / ${p.inputActual.toFixed(2)} / ${p.outputExpected.toFixed(3)} / ${p.outputActual.toFixed(3)} / ${((p.errorPercent||0).toFixed(2))}%`, margin, y);
+                        y += 5;
+                      });
+                    }
+                    y += 6;
+                  });
+                  pdf.save(`${activeJob.name}_full_report.pdf`);
+                }}>Export Job PDF</Button>
               </Box>
               {activeJob?.location && (
                 <Typography variant="caption" color="text.secondary">
@@ -167,11 +226,21 @@ export default function PressureGaugeCalibration({ onBack }: PressureGaugeCalibr
                     setActiveGaugeId(gaugeId);
                     setTab('calibration');
                   }}
+                  createGauge={createGauge}
+                  deleteGauge={deleteGauge}
                 />
               )}
 
               {tab === 'calibration' && activeGauge && (
-                <CalibrationTable gauge={activeGauge} jobId={activeJobId || ''} />
+                <CalibrationTable
+                  gauge={activeGauge}
+                  jobId={activeJobId || ''}
+                  addCalibrationPoint={addCalibrationPoint}
+                  addCalibrationPoints={addCalibrationPoints}
+                  deleteCalibrationPoint={deleteCalibrationPoint}
+                  updateCalibrationPoint={updateCalibrationPoint}
+                  updateGauge={updateGauge}
+                />
               )}
 
               {tab === 'report' && activeGauge && (

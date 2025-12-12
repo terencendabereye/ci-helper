@@ -15,10 +15,12 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import FunctionsIcon from '@mui/icons-material/Functions';
+import SettingsIcon from '@mui/icons-material/Settings';
 import './App.css';
 import UpdateNotifier from './shared/components/UpdateNotifier';
 import OnlineIndicator from './shared/components/OnlineIndicator';
 import Sidebar from './shared/components/Sidebar';
+import Settings from './shared/components/Settings';
 import MenuIcon from '@mui/icons-material/Menu';
 
 // Import modules
@@ -32,37 +34,42 @@ const modules: ModuleRegistry = {
   [PressureGaugeCalibrationModule.id]: PressureGaugeCalibrationModule,
 };
 
-// Create theme (can be customized)
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#4B0082', // dark purple
+const createAppTheme = (isDark: boolean = true, primaryColor: string = '#4B0082') => {
+  return createTheme({
+    palette: {
+      mode: isDark ? 'dark' : 'light',
+      primary: {
+        main: primaryColor,
+      },
+      secondary: {
+        main: '#FF69B4',
+      },
+      background: {
+        default: isDark ? '#121212' : '#ffffff',
+        paper: isDark ? '#1e1e1e' : '#f5f5f5'
+      },
+      text: {
+        primary: isDark ? '#ffffff' : '#000000',
+        secondary: isDark ? '#cfcfcf' : '#666666'
+      }
     },
-    secondary: {
-      main: '#FF69B4', // hot pink
-    },
-    background: {
-      default: '#121212',
-      paper: '#1e1e1e'
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#cfcfcf'
-    }
-  },
-});
+  });
+};
 
 interface AppState {
-  view: 'home' | 'module';
+  view: 'home' | 'module' | 'settings';
   activeModuleId?: string;
 }
 
 function App() {
   const [appState, setAppState] = useState<AppState>({ view: 'home' });
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [primaryColor, setPrimaryColor] = useState('#4B0082');
   const themeHook = useTheme();
   const isDesktop = useMediaQuery(themeHook.breakpoints.up('md'));
+
+  const theme = createAppTheme(isDarkMode, primaryColor);
 
   const handleModuleSelect = (moduleId: string) => {
     setAppState({ view: 'module', activeModuleId: moduleId });
@@ -72,10 +79,18 @@ function App() {
     setAppState({ view: 'home' });
   };
 
+  const handleSettingsOpen = () => {
+    setAppState({ view: 'settings' });
+  };
+
   if (appState.view === 'module' && appState.activeModuleId) {
     const module = modules[appState.activeModuleId];
     if (!module) {
-      return <Typography>Module not found</Typography>;
+      return (
+        <ThemeProvider theme={theme}>
+          <Typography>Module not found</Typography>
+        </ThemeProvider>
+      );
     }
 
     const ModuleComponent = module.component;
@@ -86,6 +101,51 @@ function App() {
     );
   }
 
+  if (appState.view === 'settings') {
+    return (
+      <ThemeProvider theme={theme}>
+        <UpdateNotifier />
+        <OnlineIndicator />
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+          <Sidebar
+            open={isDesktop ? true : drawerOpen}
+            variant={isDesktop ? 'permanent' : 'temporary'}
+            onClose={() => setDrawerOpen(false)}
+            modules={modules}
+            onSelectModule={(id: string) => setAppState({ view: 'module', activeModuleId: id })}
+          />
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <AppBar position="static">
+              <Toolbar>
+                {!isDesktop && (
+                  <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => setDrawerOpen(true)}>
+                    <MenuIcon />
+                  </IconButton>
+                )}
+                <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+                  Settings
+                </Typography>
+                <IconButton color="inherit" onClick={handleBackToHome}>
+                  ✕
+                </IconButton>
+              </Toolbar>
+            </AppBar>
+
+            {/* Settings Content */}
+            <Container maxWidth="md" sx={{ py: 3, flex: 1 }}>
+              <Settings
+                onThemeChange={setIsDarkMode}
+                onThemeColorChange={setPrimaryColor}
+              />
+            </Container>
+          </Box>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  // Home view
   return (
     <ThemeProvider theme={theme}>
       <UpdateNotifier />
@@ -110,12 +170,15 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
               CI Helper
             </Typography>
+            <IconButton color="inherit" onClick={handleSettingsOpen}>
+              <SettingsIcon />
+            </IconButton>
             <Typography variant="caption">v0.1.0</Typography>
           </Toolbar>
         </AppBar>
 
         {/* Main Content */}
-        <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
+        <Container maxWidth="lg" sx={{ py: 2, px: 2, flex: 1 }}>
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" gutterBottom>
               Control & Instrumentation Helper

@@ -5,9 +5,10 @@ import type { Job } from '../types';
 interface JobListProps {
   jobs: Job[];
   onSelectJob: (jobId: string) => void;
+  onDeleteJob?: (jobId: string) => void;
 }
 
-export default function JobList({ jobs, onSelectJob }: JobListProps) {
+export default function JobList({ jobs, onSelectJob, onDeleteJob }: JobListProps) {
   if (jobs.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -29,7 +30,7 @@ export default function JobList({ jobs, onSelectJob }: JobListProps) {
             </CardContent>
           </CardActionArea>
           <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-end' }}>
-            <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); /* delete job functionality tbd */ }}>
+            <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); onDeleteJob && onDeleteJob(job.id); }}>
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Box>
