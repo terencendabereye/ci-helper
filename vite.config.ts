@@ -9,6 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        // Do not call skipWaiting automatically; let the app ask the user
+        skipWaiting: false,
+        clientsClaim: false,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.(js|css|png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|eot)$/,
@@ -32,9 +35,7 @@ export default defineConfig({
               },
             },
           },
-        ],
-        skipWaiting: true,
-        clientsClaim: true,
+        ]
       },
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {

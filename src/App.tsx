@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import './App.css';
+import UpdateNotifier from './shared/components/UpdateNotifier';
 
 // Import modules
 import { LinearInterpolationModule } from './modules/linear-interpolation';
@@ -70,6 +71,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <UpdateNotifier />
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         {/* Header */}
         <AppBar position="static">
