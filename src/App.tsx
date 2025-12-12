@@ -118,7 +118,7 @@ function App() {
             <Typography variant="h4" gutterBottom>
               Control & Instrumentation Helper
             </Typography>
-            <Typography variant="body1" color="textSecondary">
+            <Typography variant="body2" color="textSecondary">
               Select a module to begin. This app works offline and data is saved locally on your device.
             </Typography>
           </Box>
@@ -181,7 +181,10 @@ function App() {
               ℹ️ About CI Helper
             </Typography>
             <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-              • <strong>Offline First:</strong> Works completely offline. All data is stored locally on your device.
+              • <strong>Online-First:</strong> Always fetches the latest data. Falls back to local cache if offline.
+            </Typography>
+            <Typography variant="body2" component="div" sx={{ mb: 1 }}>
+              • <strong>Local Storage:</strong> All your calibration data is stored locally on your device.
             </Typography>
             <Typography variant="body2" component="div" sx={{ mb: 1 }}>
               • <strong>Modular Design:</strong> Easy to add new calculation modules in the future.
