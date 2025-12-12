@@ -17,6 +17,7 @@ import {
 import FunctionsIcon from '@mui/icons-material/Functions';
 import './App.css';
 import UpdateNotifier from './shared/components/UpdateNotifier';
+import OnlineIndicator from './shared/components/OnlineIndicator';
 import Sidebar from './shared/components/Sidebar';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -88,6 +89,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <UpdateNotifier />
+      <OnlineIndicator />
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         <Sidebar
           open={isDesktop ? true : drawerOpen}
