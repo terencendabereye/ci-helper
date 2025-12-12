@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -24,9 +24,38 @@ export default function LinearInterpolation({
     useLinearInterpolation();
 
   const [validationError, setValidationError] = useState<string>('');
+  const [inputs, setInputs] = useState<Record<string, string>>(() => ({
+    minInput: String(range.minInput),
+    maxInput: String(range.maxInput),
+    minOutput: String(range.minOutput),
+    maxOutput: String(range.maxOutput),
+    value: String(value),
+    result: String(result),
+  }));
 
-  const handleRangeChange = (field: keyof typeof range, newValue: string) => {
-    const numValue = parseFloat(newValue);
+  useEffect(() => {
+    setInputs({
+      minInput: String(range.minInput),
+      maxInput: String(range.maxInput),
+      minOutput: String(range.minOutput),
+      maxOutput: String(range.maxOutput),
+      value: String(value),
+      result: String(result),
+    });
+  }, [range, value, result]);
+
+  const handleRangeInputChange = (field: keyof typeof range, newValue: string) => {
+    setInputs((s) => ({ ...s, [field]: newValue }));
+  };
+
+  const commitRangeField = (field: keyof typeof range) => {
+    const str = (inputs[field] ?? '').trim();
+    if (str === '') {
+      // allow empty while typing; don't validate until user provides a number
+      setValidationError('');
+      return;
+    }
+    const numValue = parseFloat(str);
     if (!isNaN(numValue)) {
       const newRange = { ...range, [field]: numValue };
       const validation = validateRange(newRange);
@@ -37,6 +66,8 @@ export default function LinearInterpolation({
       } else {
         setValidationError(validation.error || 'Invalid range');
       }
+    } else {
+      setValidationError('Please enter a valid number');
     }
   };
 
@@ -72,40 +103,36 @@ export default function LinearInterpolation({
             <TextField
               label="Min Input"
               type="number"
-              value={range.minInput}
-              onChange={(e) =>
-                handleRangeChange('minInput', e.target.value)
-              }
+              value={inputs.minInput}
+              onChange={(e) => handleRangeInputChange('minInput', e.target.value)}
+              onBlur={() => commitRangeField('minInput')}
               fullWidth
               size="small"
             />
             <TextField
               label="Max Input"
               type="number"
-              value={range.maxInput}
-              onChange={(e) =>
-                handleRangeChange('maxInput', e.target.value)
-              }
+              value={inputs.maxInput}
+              onChange={(e) => handleRangeInputChange('maxInput', e.target.value)}
+              onBlur={() => commitRangeField('maxInput')}
               fullWidth
               size="small"
             />
             <TextField
               label="Min Output"
               type="number"
-              value={range.minOutput}
-              onChange={(e) =>
-                handleRangeChange('minOutput', e.target.value)
-              }
+              value={inputs.minOutput}
+              onChange={(e) => handleRangeInputChange('minOutput', e.target.value)}
+              onBlur={() => commitRangeField('minOutput')}
               fullWidth
               size="small"
             />
             <TextField
               label="Max Output"
               type="number"
-              value={range.maxOutput}
-              onChange={(e) =>
-                handleRangeChange('maxOutput', e.target.value)
-              }
+              value={inputs.maxOutput}
+              onChange={(e) => handleRangeInputChange('maxOutput', e.target.value)}
+              onBlur={() => commitRangeField('maxOutput')}
               fullWidth
               size="small"
             />
@@ -137,12 +164,13 @@ export default function LinearInterpolation({
           <TextField
             label="Input Value"
             type="number"
-            value={value}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) {
-                calculate(val);
-              }
+            value={inputs.value}
+            onChange={(e) => setInputs((s) => ({ ...s, value: e.target.value }))}
+            onBlur={() => {
+              const str = (inputs.value ?? '').trim();
+              if (str === '') return;
+              const val = parseFloat(str);
+              if (!isNaN(val)) calculate(val);
             }}
             fullWidth
             size="small"
@@ -180,12 +208,13 @@ export default function LinearInterpolation({
           <TextField
             label="Output Value"
             type="number"
-            value={result}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) {
-                reverseCalculate(val);
-              }
+            value={inputs.result}
+            onChange={(e) => setInputs((s) => ({ ...s, result: e.target.value }))}
+            onBlur={() => {
+              const str = (inputs.result ?? '').trim();
+              if (str === '') return;
+              const val = parseFloat(str);
+              if (!isNaN(val)) reverseCalculate(val);
             }}
             fullWidth
             size="small"

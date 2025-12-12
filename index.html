@@ -15,27 +15,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      (async function(){
-        if('serviceWorker' in navigator){
-          try{
-            const regs = await navigator.serviceWorker.getRegistrations();
-            const old = regs.filter(r => !r.scope.includes('/ci-helper/'));
-            if(old.length){
-              await Promise.all(regs.map(r => r.unregister()));
-              if('caches' in window){
-                const keys = await caches.keys();
-                await Promise.all(keys.map(k => caches.delete(k)));
-              }
-              // Reload so the page loads fresh assets
-              location.reload();
-            }
-          }catch(e){
-            console.warn('SW cleanup failed', e);
-          }
-        }
-      })();
-    </script>
+    <!-- one-time SW cleanup removed; updates are now handled in-app via UpdateNotifier -->
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

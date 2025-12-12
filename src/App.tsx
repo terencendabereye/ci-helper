@@ -27,6 +27,7 @@ const modules: ModuleRegistry = {
 // Create theme (can be customized)
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
       main: '#4B0082', // dark purple
     },
@@ -34,8 +35,13 @@ const theme = createTheme({
       main: '#FF69B4', // hot pink
     },
     background: {
-      default: '#f5f5f5',
+      default: '#121212',
+      paper: '#1e1e1e'
     },
+    text: {
+      primary: '#ffffff',
+      secondary: '#cfcfcf'
+    }
   },
 });
 
