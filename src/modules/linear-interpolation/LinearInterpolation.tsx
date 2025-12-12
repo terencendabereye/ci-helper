@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme, useMediaQuery } from '@mui/material';
 import {
   Container,
   Paper,
@@ -32,6 +33,11 @@ export default function LinearInterpolation({
     value: String(value),
     result: String(result),
   }));
+  const [inputWarning, setInputWarning] = useState<string>('');
+  const [outputWarning, setOutputWarning] = useState<string>('');
+
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md')) || useMediaQuery('(pointer:fine)');
 
   useEffect(() => {
     setInputs({
@@ -68,6 +74,22 @@ export default function LinearInterpolation({
       }
     } else {
       setValidationError('Please enter a valid number');
+    }
+  };
+
+  const checkInputRange = (num: number) => {
+    if (num < Math.min(range.minInput, range.maxInput) || num > Math.max(range.minInput, range.maxInput)) {
+      setInputWarning(`Value ${num} is outside input range (${range.minInput}–${range.maxInput})`);
+    } else {
+      setInputWarning('');
+    }
+  };
+
+  const checkOutputRange = (num: number) => {
+    if (num < Math.min(range.minOutput, range.maxOutput) || num > Math.max(range.minOutput, range.maxOutput)) {
+      setOutputWarning(`Value ${num} is outside output range (${range.minOutput}–${range.maxOutput})`);
+    } else {
+      setOutputWarning('');
     }
   };
 
@@ -161,21 +183,34 @@ export default function LinearInterpolation({
             Input → Output
           </Typography>
 
-          <TextField
-            label="Input Value"
-            type="number"
-            value={inputs.value}
-            onChange={(e) => setInputs((s) => ({ ...s, value: e.target.value }))}
-            onBlur={() => {
-              const str = (inputs.value ?? '').trim();
-              if (str === '') return;
-              const val = parseFloat(str);
-              if (!isNaN(val)) calculate(val);
-            }}
-            fullWidth
-            size="small"
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+            <TextField
+              label="Input Value"
+              type="number"
+              value={inputs.value}
+              onChange={(e) => setInputs((s) => ({ ...s, value: e.target.value }))}
+              onBlur={() => {
+                const str = (inputs.value ?? '').trim();
+                if (str === '') return;
+                const val = parseFloat(str);
+                if (!isNaN(val)) {
+                  calculate(val);
+                  checkInputRange(val);
+                }
+              }}
+              fullWidth
+              size="small"
+            />
+            {isDesktop && (
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Button size="small" onClick={() => { const v = parseFloat(inputs.value||'0')||0; const nv = v - 1; setInputs(s=>({...s, value:String(nv)})); calculate(nv); checkInputRange(nv); }}>-1</Button>
+                <Button size="small" onClick={() => { const v = parseFloat(inputs.value||'0')||0; const nv = v + 1; setInputs(s=>({...s, value:String(nv)})); calculate(nv); checkInputRange(nv); }}>+1</Button>
+              </Box>
+            )}
+          </Box>
+          {inputWarning && (
+            <Alert severity="warning" sx={{ mb: 2 }}>{inputWarning}</Alert>
+          )}
 
           <Button
             variant="contained"
@@ -205,21 +240,34 @@ export default function LinearInterpolation({
             Output → Input (Find the input that produces this output)
           </Typography>
 
-          <TextField
-            label="Output Value"
-            type="number"
-            value={inputs.result}
-            onChange={(e) => setInputs((s) => ({ ...s, result: e.target.value }))}
-            onBlur={() => {
-              const str = (inputs.result ?? '').trim();
-              if (str === '') return;
-              const val = parseFloat(str);
-              if (!isNaN(val)) reverseCalculate(val);
-            }}
-            fullWidth
-            size="small"
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+            <TextField
+              label="Output Value"
+              type="number"
+              value={inputs.result}
+              onChange={(e) => setInputs((s) => ({ ...s, result: e.target.value }))}
+              onBlur={() => {
+                const str = (inputs.result ?? '').trim();
+                if (str === '') return;
+                const val = parseFloat(str);
+                if (!isNaN(val)) {
+                  reverseCalculate(val);
+                  checkOutputRange(val);
+                }
+              }}
+              fullWidth
+              size="small"
+            />
+            {isDesktop && (
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Button size="small" onClick={() => { const v = parseFloat(inputs.result||'0')||0; const nv = v - 1; setInputs(s=>({...s, result:String(nv)})); reverseCalculate(nv); checkOutputRange(nv); }}>-1</Button>
+                <Button size="small" onClick={() => { const v = parseFloat(inputs.result||'0')||0; const nv = v + 1; setInputs(s=>({...s, result:String(nv)})); reverseCalculate(nv); checkOutputRange(nv); }}>+1</Button>
+              </Box>
+            )}
+          </Box>
+          {outputWarning && (
+            <Alert severity="warning" sx={{ mb: 2 }}>{outputWarning}</Alert>
+          )}
 
           <Button
             variant="contained"
