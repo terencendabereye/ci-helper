@@ -10,10 +10,15 @@ import {
   CardActionArea,
   ThemeProvider,
   createTheme,
+  IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import './App.css';
 import UpdateNotifier from './shared/components/UpdateNotifier';
+import Sidebar from './shared/components/Sidebar';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // Import modules
 import { LinearInterpolationModule } from './modules/linear-interpolation';
@@ -52,6 +57,9 @@ interface AppState {
 
 function App() {
   const [appState, setAppState] = useState<AppState>({ view: 'home' });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const themeHook = useTheme();
+  const isDesktop = useMediaQuery(themeHook.breakpoints.up('md'));
 
   const handleModuleSelect = (moduleId: string) => {
     setAppState({ view: 'module', activeModuleId: moduleId });
@@ -78,10 +86,23 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <UpdateNotifier />
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Sidebar
+          open={isDesktop ? true : drawerOpen}
+          variant={isDesktop ? 'permanent' : 'temporary'}
+          onClose={() => setDrawerOpen(false)}
+          modules={modules}
+          onSelectModule={(id: string) => setAppState({ view: 'module', activeModuleId: id })}
+        />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <AppBar position="static">
           <Toolbar>
+            {!isDesktop && (
+              <IconButton color="inherit" edge="start" sx={{ mr: 2 }} onClick={() => setDrawerOpen(true)}>
+                <MenuIcon />
+              </IconButton>
+            )}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
               CI Helper
             </Typography>
@@ -90,7 +111,7 @@ function App() {
         </AppBar>
 
         {/* Main Content */}
-        <Container maxWidth="md" sx={{ py: 4, flex: 1 }}>
+        <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" gutterBottom>
               Control & Instrumentation Helper
@@ -178,6 +199,7 @@ function App() {
             CI Helper • Built for underground work • v0.1.0
           </Typography>
         </Box>
+      </Box>
       </Box>
     </ThemeProvider>
   );
